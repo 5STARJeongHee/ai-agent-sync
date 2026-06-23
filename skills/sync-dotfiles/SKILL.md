@@ -20,6 +20,33 @@ description: |
 
 This skill manages dotfiles and agent configurations via `chezmoi` across 3 main directions.
 
+## 동기화 방향 (Synchronization Directions)
+
+현재 스킬에서 지원하는 동기화 방향은 다음과 같습니다. 원격 저장소(Remote)로의 반영은 B와 C 방향 처리 과정에서 자동으로 함께 처리되고 있습니다.
+
+```text
+┌──────┬─────────────────────────────────┐
+│ 방향 │              흐름               │
+├──────┼─────────────────────────────────┤
+│  A   │ Remote → Home                   │
+├──────┼─────────────────────────────────┤
+│  B   │ Source → Home (+ git push 포함) │
+├──────┼─────────────────────────────────┤
+│  C   │ Home → Source (+ git push 포함) │
+└──────┴─────────────────────────────────┘
+```
+
+"Source → Remote" 또는 "Home → Remote" 단독 방향이 없으며, `git push`는 B와 C 방향 처리 과정 안에 포함되어 있습니다.
+
+즉, 소스 디렉토리(Source)에 변경이 있고 원격(Remote)에만 올리고 싶을 때(홈 디렉토리에 apply 하지 않아도 되는 경우)를 커버하는 방향이 명시적으로 없습니다. 해당 경우에는 직접 아래와 같이 실행해야 합니다.
+
+```sh
+cd $(chezmoi source-path)
+git push
+```
+
+스킬 설계 관점에서는 "D방향: Source → Remote (Push Only)"가 있으면 더 완전한 구조이지만, 현재는 빠져 있는 상태입니다.
+
 ## Prerequisites Check
 
 Before running any direction, verify chezmoi is installed:
@@ -142,6 +169,12 @@ cp run_always_sync-skills.sh "${SOURCE_DIR}/"
 cp run_once_setup-auto-update.sh "${SOURCE_DIR}/"
 chezmoi apply
 ```
+
+## 용어 설명: 승격(Promote)과 강등(Demote)
+
+다른 사용자들이 헷갈리지 않도록 스킬과 서브 에이전트의 승격(Promote)과 강등(Demote)에 대해 다음과 같이 명확히 정의합니다:
+- **승격 (Promote)**: 특정 에이전트(예: Claude) 전용으로 사용하던 스킬이나 서브 에이전트를 공통 허브(common)로 이동시켜, **모든 에이전트(Gemini, Codex 등)가 공통으로 공유하고 사용할 수 있도록 권한과 범위를 확장**하는 것을 의미합니다.
+- **강등 (Demote)**: 모든 에이전트가 공통으로 공유하던 스킬이나 서브 에이전트를 특정 에이전트 전용 디렉토리로 이동시켜, **해당 에이전트에서만 사용할 수 있도록 권한과 범위를 축소**하는 것을 의미합니다.
 
 ## Direction A — Remote → Home Directory (Remote Pull)
 

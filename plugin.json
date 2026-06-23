@@ -1,0 +1,6 @@
+{
+  "name": "ai-agent-sync",
+  "description": "A cross-agent plugin to synchronize dotfiles, skills, and settings using chezmoi.",
+  "version": "1.0.0",
+  "author": "Vibe Index User"
+}
