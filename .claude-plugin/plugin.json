@@ -1,0 +1,15 @@
+{
+  "name": "ai-agent-sync",
+  "version": "1.0.0",
+  "description": "Cross-agent plugin to synchronize and manage skills, agents, and plugins using chezmoi.",
+  "author": {
+    "name": "5STARJeongHee",
+    "url": "https://github.com/5STARJeongHee"
+  },
+  "homepage": "https://github.com/5STARJeongHee/ai-agent-sync",
+  "repository": "https://github.com/5STARJeongHee/ai-agent-sync",
+  "license": "MIT",
+  "keywords": ["skills", "agents", "plugins", "chezmoi", "sync", "cross-agent"],
+  "mcpServers": {},
+  "skills": ["./skills/"]
+}
