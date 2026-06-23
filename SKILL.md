@@ -11,8 +11,9 @@ description: |
   "promote sub-agent", "demote sub-agent", "sub-agent 목록", "sub-agent 추가",
   "sub-agent 제거", "sub-agent 승격", "sub-agent 강등" or similar.
   Also trigger when the user asks to "list skills", "backup skill", "delete skill",
+  "promote skill", "demote skill",
   "list backups", "delete from backup", "스킬 목록", "스킬 백업", "스킬 삭제",
-  "백업 목록", "백업에서 삭제", "백업 영구 삭제" or similar.
+  "스킬 승격", "스킬 강등", "백업 목록", "백업에서 삭제", "백업 영구 삭제" or similar.
 ---
 
 # sync-dotfiles
@@ -252,7 +253,46 @@ done
 
 Report as a table: skill name, scope (common / agent-specific).
 
-### Case 5 — 스킬 백업 후 삭제
+### Case 5 — 스킬 승격: agent-specific → common
+
+에이전트 전용 디렉토리의 스킬을 공통 허브로 이동해 모든 에이전트가 공유하게 합니다.
+
+```sh
+SOURCE_DIR=$(chezmoi source-path)
+mkdir -p "${SOURCE_DIR}/dot_ai-skills"
+
+# Claude-only → common 예시 (다른 에이전트는 <agent> 부분만 교체)
+mv "${SOURCE_DIR}/dot_<agent>/skills/<name>" "${SOURCE_DIR}/dot_ai-skills/"
+
+chezmoi apply
+cd "${SOURCE_DIR}"
+git add -A
+git commit -m "skill: promote <name> to common"
+git push
+```
+
+Report: 어떤 에이전트에서 공통으로 승격했는지 결과를 알려줍니다.
+
+### Case 6 — 스킬 강등: common → agent-specific
+
+공통 허브의 스킬을 특정 에이전트 전용 디렉토리로 이동합니다.
+
+```sh
+SOURCE_DIR=$(chezmoi source-path)
+mkdir -p "${SOURCE_DIR}/dot_<agent>/skills"
+
+mv "${SOURCE_DIR}/dot_ai-skills/<name>" "${SOURCE_DIR}/dot_<agent>/skills/"
+
+chezmoi apply
+cd "${SOURCE_DIR}"
+git add -A
+git commit -m "skill: demote <name> to <agent>-only"
+git push
+```
+
+Report: 어떤 에이전트 전용으로 강등됐는지 결과를 알려줍니다.
+
+### Case 7 — 스킬 백업 후 삭제
 
 ```sh
 SOURCE_DIR=$(chezmoi source-path)
@@ -262,7 +302,7 @@ mkdir -p "${SOURCE_DIR}/_archive/skills"
 mv "${SOURCE_DIR}/dot_ai-skills/<name>" "${SOURCE_DIR}/_archive/skills/"
 
 # Agent-specific skill의 경우
-# mv "${SOURCE_DIR}/dot_<agent>/skills/<name>.md" "${SOURCE_DIR}/_archive/skills/"
+# mv "${SOURCE_DIR}/dot_<agent>/skills/<name>" "${SOURCE_DIR}/_archive/skills/"
 
 chezmoi apply
 cd "${SOURCE_DIR}"
