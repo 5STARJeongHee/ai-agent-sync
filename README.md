@@ -33,19 +33,19 @@ cp SKILL.md ~/.claude/skills/sync-dotfiles.md
 cp SKILL.md ~/.gemini/skills/sync-dotfiles.md
 ```
 
-### Step 2 — Integrate auto-sync scripts into your dotfiles repo
+### Step 2 — Ask the agent to set up
 
-Copy the two `run_*` scripts to the root of your chezmoi source directory:
-
-```bash
-SOURCE_DIR=$(chezmoi source-path)
-cp scripts/run_always_sync-skills.sh "${SOURCE_DIR}/"
-cp scripts/run_once_setup-auto-update.sh "${SOURCE_DIR}/"
-chezmoi apply
+```
+"초기 설정해줘" / "set up for the first time"
 ```
 
-- `run_always_sync-skills.sh` — chezmoi runs this on every `apply`. Distributes all skills from `~/.ai-skills/` to each agent automatically.
-- `run_once_setup-auto-update.sh` — chezmoi runs this once per machine. Registers a login trigger so `chezmoi update` runs automatically at startup.
+The agent will automatically:
+1. Check if `chezmoi` is installed and initialized (and guide you if not)
+2. Download `run_always_sync-skills.sh` and `run_once_setup-auto-update.sh` into your dotfiles repo
+3. Register this skill in the common skill hub (`~/.ai-skills/sync-dotfiles/`)
+4. Run `chezmoi apply` and push to git
+
+After this, every future `chezmoi update` distributes all skills to every agent automatically.
 
 ### Step 3 — Use
 
@@ -53,8 +53,6 @@ Ask your AI agent:
 - "Sync your settings" → pulls remote changes and distributes to all agents
 - "Push my changes" → commits and pushes local changes to git
 - "Update your skills from remote" → same as sync
-
-On first use, the agent checks if `chezmoi` is installed and initialized, and guides you through setup if needed.
 
 ## New machine setup
 

@@ -4,6 +4,7 @@ description: |
   A skill to synchronize agent configurations (.claude, .gemini, .codex) using chezmoi. 
   Handles remote pull, local apply, and git push operations seamlessly.
   Trigger this when the user asks to "sync settings", "pull latest skills", "update dotfiles", or "push my changes".
+  Also trigger when the user asks to "set up for the first time", "integrate scripts", or "초기 설정해줘".
 ---
 
 # sync-dotfiles
@@ -37,6 +38,51 @@ fi
 ```
 
 If not initialized, stop and ask the user for their dotfiles repository URL, then run `chezmoi init --apply <url>`.
+
+## First-time Integration
+
+Trigger when the user says "set up for the first time", "integrate scripts", "초기 설정해줘", or similar.
+
+Run the Prerequisites Check first. If chezmoi is not initialized, ask for the dotfiles repo URL and run `chezmoi init --apply <url>` before proceeding.
+
+### Step 1 — Download auto-sync scripts into the dotfiles repo
+
+```sh
+SOURCE_DIR=$(chezmoi source-path)
+
+curl -fsSL "https://raw.githubusercontent.com/5STARJeongHee/ai-agent-sync/main/scripts/run_always_sync-skills.sh" \
+  -o "${SOURCE_DIR}/run_always_sync-skills.sh"
+
+curl -fsSL "https://raw.githubusercontent.com/5STARJeongHee/ai-agent-sync/main/scripts/run_once_setup-auto-update.sh" \
+  -o "${SOURCE_DIR}/run_once_setup-auto-update.sh"
+
+chmod +x "${SOURCE_DIR}/run_always_sync-skills.sh"
+chmod +x "${SOURCE_DIR}/run_once_setup-auto-update.sh"
+```
+
+### Step 2 — Set up the common skill hub and register this skill
+
+```sh
+mkdir -p "${SOURCE_DIR}/dot_ai-skills/sync-dotfiles"
+
+curl -fsSL "https://raw.githubusercontent.com/5STARJeongHee/ai-agent-sync/main/SKILL.md" \
+  -o "${SOURCE_DIR}/dot_ai-skills/sync-dotfiles/SKILL.md"
+```
+
+### Step 3 — Apply and push
+
+```sh
+cd "${SOURCE_DIR}"
+chezmoi apply
+
+git add -A
+git commit -m "feat: integrate ai-agent-sync plugin"
+git push
+```
+
+After this, every future `chezmoi apply` or `chezmoi update` will:
+1. Automatically distribute all skills in `~/.ai-skills/` to every agent
+2. Run the login auto-sync scheduler registration (once per machine)
 
 ## Skill Distribution Architecture
 
