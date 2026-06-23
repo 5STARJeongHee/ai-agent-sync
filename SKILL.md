@@ -10,6 +10,34 @@ description: |
 
 This skill manages dotfiles and agent configurations via `chezmoi` across 3 main directions.
 
+## Prerequisites Check
+
+Before running any direction, verify chezmoi is installed:
+
+```sh
+if ! command -v chezmoi &>/dev/null; then
+  echo "chezmoi is required but not installed."
+  echo "Install with one of the following:"
+  echo "  macOS/Linux/Git Bash: sh -c \"\$(curl -fsLS get.chezmoi.io)\" -- -b ~/bin"
+  echo "  Windows (PowerShell): winget install twpayne.chezmoi"
+  exit 1
+fi
+```
+
+If not installed, stop immediately and show the install command. Do not proceed with sync.
+
+Also verify chezmoi has been initialized (a source directory exists):
+
+```sh
+if ! chezmoi source-path &>/dev/null 2>&1; then
+  echo "chezmoi is not initialized yet."
+  echo "Run: chezmoi init --apply <your-repo-url>"
+  exit 1
+fi
+```
+
+If not initialized, stop and ask the user for their dotfiles repository URL, then run `chezmoi init --apply <url>`.
+
 ## Direction A — Remote → Home Directory (Remote Pull)
 
 Fetches changes pushed by other machines or collaborators from the remote repository.
