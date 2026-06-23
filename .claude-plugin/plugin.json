@@ -11,5 +11,10 @@
   "license": "MIT",
   "keywords": ["skills", "agents", "plugins", "chezmoi", "sync", "cross-agent"],
   "mcpServers": {},
-  "skills": ["./skills/"]
+  "skills": ["./skills/"],
+  "defaultPrompt": [
+    "If chezmoi is not yet installed or initialized, run the sync-dotfiles first-time setup ('초기 설정해줘') before using any other skill.",
+    "Use list-skills to see all skills across Claude, Gemini, and Codex.",
+    "Use manage-plugins to add or remove plugins per agent."
+  ]
 }

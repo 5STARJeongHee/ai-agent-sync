@@ -47,33 +47,37 @@ git push
 
 스킬 설계 관점에서는 "D방향: Source → Remote (Push Only)"가 있으면 더 완전한 구조이지만, 현재는 빠져 있는 상태입니다.
 
-## Prerequisites Check
+## Auto-Onboarding Check
 
-Before running any direction, verify chezmoi is installed:
+이 스킬의 어떤 기능을 실행하기 전에 항상 다음 체크를 먼저 수행한다.
+chezmoi가 없거나 초기화되지 않은 경우, 다른 기능을 실행하지 않고 즉시 초기 설정으로 안내한다.
 
 ```sh
+# 1. chezmoi 설치 확인
 if ! command -v chezmoi &>/dev/null; then
-  echo "chezmoi is required but not installed."
-  echo "Install with one of the following:"
-  echo "  macOS/Linux/Git Bash: sh -c \"\$(curl -fsLS get.chezmoi.io)\" -- -b ~/bin"
-  echo "  Windows (PowerShell): winget install twpayne.chezmoi"
+  echo "[ai-agent-sync] chezmoi가 설치되어 있지 않습니다."
+  echo ""
+  echo "설치 방법:"
+  echo "  macOS/Linux/Git Bash : sh -c \"\$(curl -fsLS get.chezmoi.io)\" -- -b ~/bin"
+  echo "  Windows (PowerShell) : winget install twpayne.chezmoi"
+  echo ""
+  echo "설치 후 dotfiles 저장소 URL을 알려주시면 초기 설정을 이어서 진행합니다."
   exit 1
 fi
-```
 
-If not installed, stop immediately and show the install command. Do not proceed with sync.
-
-Also verify chezmoi has been initialized (a source directory exists):
-
-```sh
+# 2. chezmoi 초기화 확인
 if ! chezmoi source-path &>/dev/null 2>&1; then
-  echo "chezmoi is not initialized yet."
-  echo "Run: chezmoi init --apply <your-repo-url>"
+  echo "[ai-agent-sync] chezmoi가 초기화되어 있지 않습니다."
+  echo ""
+  echo "dotfiles 저장소가 있다면:"
+  echo "  chezmoi init --apply <your-repo-url>"
+  echo ""
+  echo "저장소가 없다면 새로 만든 뒤 URL을 알려주세요. 초기 설정을 안내합니다."
   exit 1
 fi
 ```
 
-If not initialized, stop and ask the user for their dotfiles repository URL, then run `chezmoi init --apply <url>`.
+chezmoi가 정상이면 아래 방향별 절차 중 해당하는 것을 실행한다.
 
 ## First-time Integration
 

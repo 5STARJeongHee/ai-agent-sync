@@ -1,0 +1,28 @@
+{
+  "name": "ai-agent-sync",
+  "owner": {
+    "name": "5STARJeongHee",
+    "email": "jeonghee.park@datastreams.co.kr"
+  },
+  "metadata": {
+    "description": "Cross-agent skill, agent, and plugin synchronization via chezmoi"
+  },
+  "plugins": [
+    {
+      "name": "ai-agent-sync",
+      "source": "./",
+      "description": "Manage and sync skills, sub-agents, and plugins across Claude, Gemini, and Codex using chezmoi.",
+      "version": "1.0.0",
+      "author": {
+        "name": "5STARJeongHee",
+        "url": "https://github.com/5STARJeongHee"
+      },
+      "homepage": "https://github.com/5STARJeongHee/ai-agent-sync",
+      "repository": "https://github.com/5STARJeongHee/ai-agent-sync",
+      "license": "MIT",
+      "keywords": ["skills", "agents", "plugins", "chezmoi", "sync", "cross-agent"],
+      "category": "workflow",
+      "tags": ["skills", "agents", "sync", "chezmoi", "cross-agent", "dotfiles"]
+    }
+  ]
+}
