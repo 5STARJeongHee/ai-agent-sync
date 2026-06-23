@@ -75,20 +75,62 @@ git push
 
 ## Direction C — Home Directory → Source (Reverse Sync)
 
-Used when files are modified directly in the home directory and need to be saved to the source repo.
+Used in two cases:
+1. **First-time registration** — registering agent skill directories with chezmoi for the first time
+2. **Modified files** — files edited directly in the home directory that need to be saved back to the source repo
+
+### Case 1: First-time registration of agent skill directories
+
+Run this once on the primary machine to start tracking agent configurations:
 
 ```sh
-# Example: re-add modified agent configuration files
-# Adjust paths based on the requested files
+# Register skill directories for each agent you use
+chezmoi add ~/.claude/skills/
+chezmoi add ~/.claude/CLAUDE.md
+
+chezmoi add ~/.gemini/skills/         # if using Gemini
+chezmoi add ~/.gemini/GEMINI.md       # if using Gemini
+
+chezmoi add ~/.codex/skills/          # if using Codex
+
+SOURCE_DIR=$(chezmoi source-path)
+cd "${SOURCE_DIR}"
+git add -A
+git commit -m "chore: register agent skill directories"
+git push
+```
+
+After this, other machines can receive all skills automatically via `chezmoi init --apply <repo-url>`.
+
+### Case 2: Re-add modified files
+
+When specific files were edited directly in the home directory:
+
+```sh
+# Re-add only the changed files
 chezmoi re-add ~/.claude/CLAUDE.md
 chezmoi re-add ~/.gemini/GEMINI.md
-chezmoi re-add ~/.codex/config.toml
 
 SOURCE_DIR=$(chezmoi source-path)
 cd "${SOURCE_DIR}"
 git diff
 git add -A
 git commit -m "chore: re-add modified dotfiles"
+git push
+```
+
+### Case 3: New skill added to an agent
+
+When a new skill file was placed directly into an agent's skills directory:
+
+```sh
+# Register the new skill file with chezmoi
+chezmoi add ~/.claude/skills/<new-skill-name>.md
+
+SOURCE_DIR=$(chezmoi source-path)
+cd "${SOURCE_DIR}"
+git add -A
+git commit -m "chore: add <new-skill-name> skill"
 git push
 ```
 
