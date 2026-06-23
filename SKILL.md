@@ -10,6 +10,9 @@ description: |
   Also trigger when the user asks to "list sub-agents", "add sub-agent", "remove sub-agent",
   "promote sub-agent", "demote sub-agent", "sub-agent 목록", "sub-agent 추가",
   "sub-agent 제거", "sub-agent 승격", "sub-agent 강등" or similar.
+  Also trigger when the user asks to "list skills", "backup skill", "delete skill",
+  "list backups", "delete from backup", "스킬 목록", "스킬 백업", "스킬 삭제",
+  "백업 목록", "백업에서 삭제", "백업 영구 삭제" or similar.
 ---
 
 # sync-dotfiles
@@ -235,6 +238,39 @@ git commit -m "chore: add <new-skill-name> skill"
 git push
 ```
 
+### Case 4 — 스킬 목록 조회
+
+```sh
+echo "=== Common skills (~/.ai-skills/) ==="
+ls ~/.ai-skills/ 2>/dev/null || echo "(none)"
+
+for a in .claude .gemini .codex; do
+    echo "=== ${a}-only (~/${a}/skills/) ==="
+    ls ~/${a}/skills/ 2>/dev/null || echo "(none)"
+done
+```
+
+Report as a table: skill name, scope (common / agent-specific).
+
+### Case 5 — 스킬 백업 후 삭제
+
+```sh
+SOURCE_DIR=$(chezmoi source-path)
+mkdir -p "${SOURCE_DIR}/_archive/skills"
+
+# Common skill 백업 후 삭제
+mv "${SOURCE_DIR}/dot_ai-skills/<name>" "${SOURCE_DIR}/_archive/skills/"
+
+# Agent-specific skill의 경우
+# mv "${SOURCE_DIR}/dot_<agent>/skills/<name>.md" "${SOURCE_DIR}/_archive/skills/"
+
+chezmoi apply
+cd "${SOURCE_DIR}"
+git add -A
+git commit -m "chore: archive <name> skill"
+git push
+```
+
 ## Sub-Agent Management
 
 Manages sub-agents across all AI agents (Claude, Gemini, Codex). All three agents use the same `.md` format, so common sub-agents work universally.
@@ -355,21 +391,65 @@ git commit -m "agent: demote <name> to <agent>-only"
 git push
 ```
 
-### Case 6 — Remove sub-agent
+### Case 6 — 백업 후 삭제
 
 ```sh
 SOURCE_DIR=$(chezmoi source-path)
+mkdir -p "${SOURCE_DIR}/_archive/agents"
 
-# Common sub-agent
-rm "${SOURCE_DIR}/dot_ai-agents/<name>.md"
+# Common sub-agent 백업 후 삭제
+mv "${SOURCE_DIR}/dot_ai-agents/<name>.md" "${SOURCE_DIR}/_archive/agents/"
 
-# Or agent-specific
-rm "${SOURCE_DIR}/dot_<agent>/agents/<name>.md"
+# Agent-specific의 경우
+# mv "${SOURCE_DIR}/dot_<agent>/agents/<name>.md" "${SOURCE_DIR}/_archive/agents/"
 
 chezmoi apply
 cd "${SOURCE_DIR}"
 git add -A
-git commit -m "agent: remove <name> sub-agent"
+git commit -m "agent: archive <name> sub-agent"
+git push
+```
+
+## Archive Management
+
+보관된 스킬과 sub-agent를 관리합니다. 보관 위치.
+
+```
+${SOURCE_DIR}/_archive/
+├── skills/    ← 보관된 스킬 디렉토리
+└── agents/    ← 보관된 sub-agent 파일
+```
+
+### 백업 목록 조회
+
+Trigger: "백업 목록", "list backups", "보관된 스킬/sub-agent 보여줘"
+
+```sh
+SOURCE_DIR=$(chezmoi source-path)
+
+echo "=== Archived skills (_archive/skills/) ==="
+ls "${SOURCE_DIR}/_archive/skills/" 2>/dev/null || echo "(none)"
+
+echo "=== Archived sub-agents (_archive/agents/) ==="
+ls "${SOURCE_DIR}/_archive/agents/" 2>/dev/null || echo "(none)"
+```
+
+### 백업에서 영구 삭제
+
+Trigger: "백업에서 삭제", "delete from backup", "백업 영구 삭제"
+
+```sh
+SOURCE_DIR=$(chezmoi source-path)
+
+# 보관된 스킬 영구 삭제
+rm -rf "${SOURCE_DIR}/_archive/skills/<name>"
+
+# 보관된 sub-agent 영구 삭제
+# rm -f "${SOURCE_DIR}/_archive/agents/<name>.md"
+
+cd "${SOURCE_DIR}"
+git add -A
+git commit -m "chore: permanently delete <name> from archive"
 git push
 ```
 
