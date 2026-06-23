@@ -12,12 +12,16 @@ Common skills live in a single hub (`~/.ai-skills/`) and are automatically distr
 
 ```
 dotfiles repo (GitHub)
-├── dot_ai-skills/              ← common skill hub → all agents
-│   └── sync-dotfiles/
-│       └── SKILL.md
-├── dot_claude/skills/          ← Claude-only skills
-├── dot_gemini/skills/          ← Gemini-only skills
-├── run_always_sync-skills.sh   ← auto-runs on every chezmoi apply
+├── dot_ai-skills/                ← common skill hub → all agents
+│   └── sync-dotfiles/SKILL.md
+├── dot_ai-agents/                ← common sub-agent hub → all agents
+│   └── <name>.md
+├── dot_claude/skills/            ← Claude-only skills
+├── dot_claude/agents/            ← Claude-only sub-agents
+├── dot_gemini/skills/            ← Gemini-only skills
+├── dot_gemini/agents/            ← Gemini-only sub-agents
+├── run_always_sync-skills.sh     ← auto-runs on every chezmoi apply
+├── run_always_sync-agents.sh     ← auto-runs on every chezmoi apply
 └── run_once_setup-auto-update.sh ← registers login auto-sync (once per machine)
 ```
 
@@ -98,6 +102,7 @@ chezmoi apply
 - `SKILL.md` — Core prompt instructions for the AI agent
 - `scripts/setup.sh` — Optional one-shot bootstrap helper
 - `scripts/run_always_sync-skills.sh` — Distributes common skills to all agents on every chezmoi apply
+- `scripts/run_always_sync-agents.sh` — Distributes common sub-agents to all agents on every chezmoi apply
 - `scripts/run_once_setup-auto-update.sh` — Registers login auto-sync scheduler (once per machine)
 - `templates/.chezmoiignore` — Reference ignore list for agent cache/secrets
 - `LICENSE` — MIT License

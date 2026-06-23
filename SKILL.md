@@ -7,6 +7,9 @@ description: |
   Also trigger when the user asks to "set up for the first time", "integrate scripts", or "초기 설정해줘".
   Also trigger when the user asks to "check scheduler", "re-register scheduler", "disable auto-sync",
   "스케줄러 상태 확인", "스케줄러 재등록", "자동 동기화 끄기" or similar.
+  Also trigger when the user asks to "list sub-agents", "add sub-agent", "remove sub-agent",
+  "promote sub-agent", "demote sub-agent", "sub-agent 목록", "sub-agent 추가",
+  "sub-agent 제거", "sub-agent 승격", "sub-agent 강등" or similar.
 ---
 
 # sync-dotfiles
@@ -52,13 +55,14 @@ Run the Prerequisites Check first. If chezmoi is not initialized, ask for the do
 ```sh
 SOURCE_DIR=$(chezmoi source-path)
 
-curl -fsSL "https://raw.githubusercontent.com/5STARJeongHee/ai-agent-sync/main/scripts/run_always_sync-skills.sh" \
-  -o "${SOURCE_DIR}/run_always_sync-skills.sh"
+BASE_URL="https://raw.githubusercontent.com/5STARJeongHee/ai-agent-sync/main/scripts"
 
-curl -fsSL "https://raw.githubusercontent.com/5STARJeongHee/ai-agent-sync/main/scripts/run_once_setup-auto-update.sh" \
-  -o "${SOURCE_DIR}/run_once_setup-auto-update.sh"
+curl -fsSL "${BASE_URL}/run_always_sync-skills.sh"  -o "${SOURCE_DIR}/run_always_sync-skills.sh"
+curl -fsSL "${BASE_URL}/run_always_sync-agents.sh"  -o "${SOURCE_DIR}/run_always_sync-agents.sh"
+curl -fsSL "${BASE_URL}/run_once_setup-auto-update.sh" -o "${SOURCE_DIR}/run_once_setup-auto-update.sh"
 
 chmod +x "${SOURCE_DIR}/run_always_sync-skills.sh"
+chmod +x "${SOURCE_DIR}/run_always_sync-agents.sh"
 chmod +x "${SOURCE_DIR}/run_once_setup-auto-update.sh"
 ```
 
@@ -109,15 +113,23 @@ Common skills use a hub-and-spoke model. All agents receive the same skills auto
 
 ```
 dotfiles repo
-├── dot_ai-skills/          ← common skill hub
-│   └── <skill-name>/
-│       └── SKILL.md
-├── dot_claude/skills/      ← Claude-only skills
-├── dot_gemini/skills/      ← Gemini-only skills
-└── run_always_sync-skills.sh  ← auto-runs on every chezmoi apply
+├── dot_ai-skills/              ← common skill hub
+│   └── <skill-name>/SKILL.md
+├── dot_ai-agents/              ← common sub-agent hub
+│   └── <name>.md
+├── dot_claude/skills/          ← Claude-only skills
+├── dot_claude/agents/          ← Claude-only sub-agents
+├── dot_gemini/skills/          ← Gemini-only skills
+├── dot_gemini/agents/          ← Gemini-only sub-agents
+├── run_always_sync-skills.sh   ← auto-runs on every chezmoi apply
+└── run_always_sync-agents.sh   ← auto-runs on every chezmoi apply
 ```
 
-On every `chezmoi apply` or `chezmoi update`, `run_always_sync-skills.sh` copies all skills from `~/.ai-skills/` into each agent's `skills/` directory automatically. No manual `chezmoi add` per agent needed.
+On every `chezmoi apply` or `chezmoi update`:
+- `run_always_sync-skills.sh` copies all skills from `~/.ai-skills/` to each agent's `skills/` directory
+- `run_always_sync-agents.sh` copies all sub-agents from `~/.ai-agents/` to each agent's `agents/` directory
+
+No manual `chezmoi add` per agent needed.
 
 To integrate into your dotfiles repo:
 ```sh
@@ -220,6 +232,144 @@ SOURCE_DIR=$(chezmoi source-path)
 cd "${SOURCE_DIR}"
 git add -A
 git commit -m "chore: add <new-skill-name> skill"
+git push
+```
+
+## Sub-Agent Management
+
+Manages sub-agents across all AI agents (Claude, Gemini, Codex). All three agents use the same `.md` format, so common sub-agents work universally.
+
+Trigger when the user asks to list, add, remove, promote, or demote sub-agents.
+
+### Sub-agent file format
+
+When creating a new sub-agent file, use this template:
+
+```markdown
+---
+name: <sub-agent-name>
+description: <one-line description of role>
+tools: [ "read_file", "grep_search", "run_shell_command" ]
+---
+
+# <Sub-Agent Name>
+
+## Primary responsibilities
+1. ...
+2. ...
+```
+
+### Case 1 — List sub-agents
+
+```sh
+echo "=== Common sub-agents (~/.ai-agents/) ==="
+ls ~/.ai-agents/ 2>/dev/null || echo "(none)"
+
+for a in .claude .gemini .codex; do
+    echo "=== ${a}-only (~/${a}/agents/) ==="
+    ls ~/${a}/agents/ 2>/dev/null || echo "(none)"
+done
+```
+
+Report the result as a table: sub-agent name, scope (common / agent-specific), description from frontmatter.
+
+### Case 2 — Add common sub-agent (all agents)
+
+```sh
+SOURCE_DIR=$(chezmoi source-path)
+
+# Create the sub-agent file
+cat > "${SOURCE_DIR}/dot_ai-agents/<name>.md" << 'EOF'
+---
+name: <name>
+description: <description>
+tools: [ "read_file", "grep_search", "run_shell_command" ]
+---
+
+# <name>
+EOF
+
+chezmoi apply   # run_always_sync-agents.sh distributes to all agents automatically
+cd "${SOURCE_DIR}"
+git add -A
+git commit -m "agent: add <name> sub-agent"
+git push
+```
+
+### Case 3 — Add agent-specific sub-agent
+
+Replace `<agent>` with `claude`, `gemini`, or `codex`.
+
+```sh
+SOURCE_DIR=$(chezmoi source-path)
+mkdir -p "${SOURCE_DIR}/dot_<agent>/agents"
+
+# Create the sub-agent file
+cat > "${SOURCE_DIR}/dot_<agent>/agents/<name>.md" << 'EOF'
+---
+name: <name>
+description: <description>
+tools: [ "read_file", "grep_search", "run_shell_command" ]
+---
+
+# <name>
+EOF
+
+chezmoi apply
+cd "${SOURCE_DIR}"
+git add -A
+git commit -m "agent: add <name> sub-agent to <agent>"
+git push
+```
+
+### Case 4 — Promote: agent-specific → common
+
+Moves a sub-agent from one agent's directory to the common hub so all agents receive it.
+
+```sh
+SOURCE_DIR=$(chezmoi source-path)
+
+mv "${SOURCE_DIR}/dot_<agent>/agents/<name>.md" "${SOURCE_DIR}/dot_ai-agents/"
+
+chezmoi apply
+cd "${SOURCE_DIR}"
+git add -A
+git commit -m "agent: promote <name> to common"
+git push
+```
+
+### Case 5 — Demote: common → agent-specific
+
+Moves a sub-agent from the common hub to a single agent's directory.
+
+```sh
+SOURCE_DIR=$(chezmoi source-path)
+mkdir -p "${SOURCE_DIR}/dot_<agent>/agents"
+
+mv "${SOURCE_DIR}/dot_ai-agents/<name>.md" "${SOURCE_DIR}/dot_<agent>/agents/"
+
+chezmoi apply
+cd "${SOURCE_DIR}"
+git add -A
+git commit -m "agent: demote <name> to <agent>-only"
+git push
+```
+
+### Case 6 — Remove sub-agent
+
+```sh
+SOURCE_DIR=$(chezmoi source-path)
+
+# Common sub-agent
+rm "${SOURCE_DIR}/dot_ai-agents/<name>.md"
+
+# Or agent-specific
+rm "${SOURCE_DIR}/dot_<agent>/agents/<name>.md"
+
+chezmoi apply
+cd "${SOURCE_DIR}"
+git add -A
+git commit -m "agent: remove <name> sub-agent"
 git push
 ```
 
