@@ -5,6 +5,8 @@ description: |
   Handles remote pull, local apply, and git push operations seamlessly.
   Trigger this when the user asks to "sync settings", "pull latest skills", "update dotfiles", or "push my changes".
   Also trigger when the user asks to "set up for the first time", "integrate scripts", or "초기 설정해줘".
+  Also trigger when the user asks to "check scheduler", "re-register scheduler", "disable auto-sync",
+  "스케줄러 상태 확인", "스케줄러 재등록", "자동 동기화 끄기" or similar.
 ---
 
 # sync-dotfiles
@@ -71,13 +73,30 @@ curl -fsSL "https://raw.githubusercontent.com/5STARJeongHee/ai-agent-sync/main/S
 
 ### Step 3 — Apply and push
 
+Before pushing, verify git remote is configured:
+
 ```sh
 cd "${SOURCE_DIR}"
+
+if ! git remote get-url origin &>/dev/null 2>&1; then
+  echo "No git remote 'origin' found."
+  echo "Please create a repository and run:"
+  echo "  git remote add origin https://github.com/<user>/<repo>.git"
+  echo "Then re-run this step."
+  exit 1
+fi
+
 chezmoi apply
 
 git add -A
 git commit -m "feat: integrate ai-agent-sync plugin"
 git push
+```
+
+If `git push` fails because the remote branch does not exist yet, run:
+
+```sh
+git push -u origin main
 ```
 
 After this, every future `chezmoi apply` or `chezmoi update` will:
@@ -206,26 +225,77 @@ git push
 
 ## Auto-Update Scheduler
 
-To sync automatically on every login without manual intervention:
+Manages the login-time auto-sync scheduler. Use the appropriate sub-section based on the user's request.
+
+### Check status
+
+Trigger: "스케줄러 상태 확인", "check scheduler", "is auto-sync enabled?"
 
 ```sh
-# Register the scheduler (runs once per machine via run_once_ prefix)
+# Windows
+if schtasks /Query /TN "chezmoi-auto-update" &>/dev/null 2>&1; then
+  schtasks /Query /TN "chezmoi-auto-update" /FO LIST
+else
+  echo "Scheduler not registered."
+fi
+
+# Linux/macOS
+if crontab -l 2>/dev/null | grep -q 'chezmoi update'; then
+  crontab -l | grep 'chezmoi update'
+else
+  echo "No crontab entry found for chezmoi update."
+fi
+```
+
+Report back to the user whether the scheduler is active and show its current settings.
+
+### Register (first time)
+
+Trigger: "스케줄러 등록해줘", "set up auto-sync", first-time integration step
+
+```sh
 SOURCE_DIR=$(chezmoi source-path)
+
+if [ ! -f "${SOURCE_DIR}/run_once_setup-auto-update.sh" ]; then
+  echo "Scheduler script not found. Run first-time integration first."
+  exit 1
+fi
+
 sh "${SOURCE_DIR}/run_once_setup-auto-update.sh"
 ```
 
 This registers:
-- **Windows**: Task Scheduler (`chezmoi-auto-update`) to run `chezmoi update` at login
+- **Windows**: Task Scheduler task `chezmoi-auto-update` at login
 - **Linux/macOS**: crontab `@reboot` entry
 
-Verify registration:
+### Force re-register
+
+Trigger: "스케줄러 재등록", "re-register scheduler", "scheduler is broken"
+
+`run_once_` scripts are tracked by chezmoi and normally run only once. To force re-registration, run the script directly:
+
+```sh
+SOURCE_DIR=$(chezmoi source-path)
+sh "${SOURCE_DIR}/run_once_setup-auto-update.sh"
+```
+
+This always re-registers regardless of chezmoi's run history.
+
+### Remove
+
+Trigger: "자동 동기화 끄기", "disable auto-sync", "remove scheduler"
+
 ```sh
 # Windows
-schtasks /Query /TN "chezmoi-auto-update"
+schtasks /Delete /TN "chezmoi-auto-update" /F
+echo "Scheduler removed."
 
 # Linux/macOS
-crontab -l | grep chezmoi
+( crontab -l 2>/dev/null | grep -v 'chezmoi update' ) | crontab -
+echo "crontab entry removed."
 ```
+
+After removal, `chezmoi update` will no longer run automatically at login.
 
 ## Important Notes
 - Template files (`.tmpl`) are rendered automatically during `chezmoi apply`.
