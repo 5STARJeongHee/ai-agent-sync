@@ -1,0 +1,20 @@
+# Ignore temporary and cache files specific to AI agents
+.claude/cache/**
+.claude/plugins/**
+.claude/sessions/**
+.claude/shell-snapshots/**
+.claude/metrics/**
+
+.gemini/tmp/**
+.gemini/history/**
+
+.codex/.tmp/**
+.codex/.sandbox/**
+.codex/cache/**
+.codex/memories/**
+.codex/sessions/**
+
+# Ignore secrets
+.claude/settings.local.json
+.gemini/oauth_creds.json
+.codex/auth.json
