@@ -38,6 +38,30 @@ fi
 
 If not initialized, stop and ask the user for their dotfiles repository URL, then run `chezmoi init --apply <url>`.
 
+## Skill Distribution Architecture
+
+Common skills use a hub-and-spoke model. All agents receive the same skills automatically:
+
+```
+dotfiles repo
+├── dot_ai-skills/          ← common skill hub
+│   └── <skill-name>/
+│       └── SKILL.md
+├── dot_claude/skills/      ← Claude-only skills
+├── dot_gemini/skills/      ← Gemini-only skills
+└── run_always_sync-skills.sh  ← auto-runs on every chezmoi apply
+```
+
+On every `chezmoi apply` or `chezmoi update`, `run_always_sync-skills.sh` copies all skills from `~/.ai-skills/` into each agent's `skills/` directory automatically. No manual `chezmoi add` per agent needed.
+
+To integrate into your dotfiles repo:
+```sh
+SOURCE_DIR=$(chezmoi source-path)
+cp run_always_sync-skills.sh "${SOURCE_DIR}/"
+cp run_once_setup-auto-update.sh "${SOURCE_DIR}/"
+chezmoi apply
+```
+
 ## Direction A — Remote → Home Directory (Remote Pull)
 
 Fetches changes pushed by other machines or collaborators from the remote repository.
@@ -132,6 +156,29 @@ cd "${SOURCE_DIR}"
 git add -A
 git commit -m "chore: add <new-skill-name> skill"
 git push
+```
+
+## Auto-Update Scheduler
+
+To sync automatically on every login without manual intervention:
+
+```sh
+# Register the scheduler (runs once per machine via run_once_ prefix)
+SOURCE_DIR=$(chezmoi source-path)
+sh "${SOURCE_DIR}/run_once_setup-auto-update.sh"
+```
+
+This registers:
+- **Windows**: Task Scheduler (`chezmoi-auto-update`) to run `chezmoi update` at login
+- **Linux/macOS**: crontab `@reboot` entry
+
+Verify registration:
+```sh
+# Windows
+schtasks /Query /TN "chezmoi-auto-update"
+
+# Linux/macOS
+crontab -l | grep chezmoi
 ```
 
 ## Important Notes
