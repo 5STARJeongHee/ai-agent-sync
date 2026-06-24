@@ -138,6 +138,50 @@ data:
 
 ---
 
+## 플러그인 수정
+
+플러그인 시스템 특성상 "내용 수정"보다 **설정값 변경**이 주된 수정 작업이다.
+
+### Claude Code 플러그인 수정
+
+활성화 여부 변경.
+
+```sh
+SOURCE_DIR=$(chezmoi source-path)
+# dot_claude/settings.json.tmpl 에서 enabledPlugins 항목 수정
+# true → false: 비활성화
+# false → true: 재활성화
+```
+
+마켓플레이스 URL 변경.
+
+```sh
+# extraKnownMarketplaces 항목에서 해당 마켓플레이스의 url 수정
+```
+
+### Codex 플러그인 수정
+
+```sh
+SOURCE_DIR=$(chezmoi source-path)
+# dot_codex/config.toml 에서 해당 [plugins."<name>@<marketplace>"] 섹션 수정
+# enabled = true/false 로 활성화 여부 변경
+# 플러그인명이나 마켓플레이스 변경 시 섹션 키 자체를 수정
+```
+
+### Gemini MCP 서버 수정
+
+```sh
+SOURCE_DIR=$(chezmoi source-path)
+# dot_gemini/settings.json.tmpl 에서 mcpServers.<서버명> 수정
+```
+
+수정 가능한 항목.
+- **command / args** — 실행 명령어 및 인자 변경.
+- **env** — 환경 변수 추가·변경 (API 토큰 교체 등).
+- 서버명(키) 변경 시 기존 키를 삭제하고 새 키로 재작성한다.
+
+---
+
 ## 변경 후 공통 마무리
 
 ```sh

@@ -128,9 +128,32 @@ rm -rf "${SOURCE_DIR}/dot_ai-skills/${SKILL_NAME}"
 
 ### G. 기존 스킬 내용 수정
 
+수정할 스킬이 공통인지 에이전트 전용인지 먼저 확인한다.
+
 ```sh
 SOURCE_DIR=$(chezmoi source-path)
-# dot_ai-skills/<스킬명>/SKILL.md 또는 dot_<agent>/skills/<스킬명>/SKILL.md 를 직접 편집
+SKILL_NAME="<스킬명>"
+
+# 공통 스킬 위치 확인
+ls "${SOURCE_DIR}/dot_ai-skills/${SKILL_NAME}/" 2>/dev/null
+
+# 에이전트 전용 스킬 위치 확인
+ls "${SOURCE_DIR}/dot_claude/skills/${SKILL_NAME}/" 2>/dev/null
+ls "${SOURCE_DIR}/dot_gemini/skills/${SKILL_NAME}/" 2>/dev/null
+ls "${SOURCE_DIR}/dot_codex/skills/${SKILL_NAME}/" 2>/dev/null
+```
+
+수정 가능한 항목.
+- **description (frontmatter)** — 에이전트가 스킬을 호출할 트리거 문장. 부정확하면 호출이 안 됨.
+- **스킬 본문** — 실행 절차, 명령어, 출력 형식 등.
+- **name (frontmatter)** — 스킬명 변경 시 디렉토리명도 함께 변경해야 함.
+
+name 변경 시 디렉토리명도 함께 바꾼다.
+
+```sh
+# 공통 스킬 이름 변경 예시
+mv "${SOURCE_DIR}/dot_ai-skills/${SKILL_NAME}" \
+   "${SOURCE_DIR}/dot_ai-skills/<새스킬명>"
 ```
 
 ## 변경 후 공통 마무리 절차

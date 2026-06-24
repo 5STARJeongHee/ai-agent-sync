@@ -29,11 +29,28 @@ grep -A 10 '"enabledPlugins"' "${SOURCE_DIR}/dot_claude/settings.json.tmpl" 2>/d
 
 ### Step 2 — Codex 플러그인 조회
 
+Codex는 플러그인을 `~/.codex/plugins/cache/<marketplace>/<plugin>/<version>` 구조로 캐시한다.
+활성화 설정은 `config.toml`에서 확인하고, 실제 설치 목록은 캐시 디렉토리에서 확인한다.
+
 ```sh
 SOURCE_DIR=$(chezmoi source-path)
+
+# 활성화 설정 확인
+echo "=== Codex 활성화 설정 (config.toml) ==="
 grep -A 2 '^\[plugins\.' "${SOURCE_DIR}/dot_codex/config.toml" 2>/dev/null \
   || grep -A 2 '^\[plugins\.' "${HOME}/.codex/config.toml" 2>/dev/null \
-  || echo "(Codex 플러그인 없음)"
+  || echo "(Codex 플러그인 설정 없음)"
+
+# 실제 설치된 플러그인 캐시 확인
+echo ""
+echo "=== Codex 설치된 플러그인 캐시 (~/.codex/plugins/cache/) ==="
+if [ -d "${HOME}/.codex/plugins/cache" ]; then
+  find "${HOME}/.codex/plugins/cache" -mindepth 3 -maxdepth 3 -type d \
+    | sed "s|${HOME}/.codex/plugins/cache/||" \
+    | awk -F'/' '{print $1 "/" $2 " (v" $3 ")"}'
+else
+  echo "(캐시 없음)"
+fi
 ```
 
 ### Step 3 — Gemini MCP 서버 조회

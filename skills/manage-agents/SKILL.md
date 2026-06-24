@@ -86,7 +86,34 @@ mv "${SOURCE_DIR}/dot_ai-agents/${AGENT_NAME}.md" \
    "${SOURCE_DIR}/dot_${MAIN_AGENT}/agents/"
 ```
 
-### E. 서브에이전트 제거
+### E. 기존 서브에이전트 수정
+
+수정할 에이전트가 공통인지 전용인지 먼저 확인한다.
+
+```sh
+SOURCE_DIR=$(chezmoi source-path)
+AGENT_NAME="<에이전트명>"
+
+# 위치 확인
+ls "${SOURCE_DIR}/dot_ai-agents/${AGENT_NAME}.md" 2>/dev/null
+ls "${SOURCE_DIR}/dot_claude/agents/${AGENT_NAME}.md" 2>/dev/null
+ls "${SOURCE_DIR}/dot_gemini/agents/${AGENT_NAME}.md" 2>/dev/null
+ls "${SOURCE_DIR}/dot_codex/agents/${AGENT_NAME}.md" 2>/dev/null
+```
+
+수정 가능한 항목.
+- **description (frontmatter)** — 에이전트 역할 설명. 오케스트레이터가 위임 판단에 사용함.
+- **tools (frontmatter)** — 허용 도구 목록 추가·제거.
+- **시스템 프롬프트 본문** — 페르소나, 지침, 출력 형식 등.
+- **name (frontmatter)** — 이름 변경 시 파일명도 함께 변경해야 함.
+
+```sh
+# 이름 변경 예시 (공통 에이전트)
+mv "${SOURCE_DIR}/dot_ai-agents/${AGENT_NAME}.md" \
+   "${SOURCE_DIR}/dot_ai-agents/<새에이전트명>.md"
+```
+
+### F. 서브에이전트 제거
 
 ```sh
 SOURCE_DIR=$(chezmoi source-path)

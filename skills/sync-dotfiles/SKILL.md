@@ -110,6 +110,35 @@ curl -fsSL "https://raw.githubusercontent.com/5STARJeongHee/ai-agent-sync/main/S
   -o "${SOURCE_DIR}/dot_ai-skills/sync-dotfiles/SKILL.md"
 ```
 
+### Step 2-b — Claude enabledPlugins 확인 및 자동 추가
+
+Claude settings.json에 `enabledPlugins` 항목이 없으면 자동으로 추가한다.
+
+```sh
+SETTINGS_FILE="${HOME}/.claude/settings.json"
+
+# settings.json이 없으면 생성
+if [ ! -f "${SETTINGS_FILE}" ]; then
+  echo '{}' > "${SETTINGS_FILE}"
+fi
+
+# enabledPlugins 항목 확인 후 없으면 추가
+if ! grep -q '"ai-agent-sync@ai-agent-sync"' "${SETTINGS_FILE}"; then
+  # jq가 있는 경우
+  if command -v jq &>/dev/null; then
+    tmp=$(mktemp)
+    jq '.enabledPlugins["ai-agent-sync@ai-agent-sync"] = true' "${SETTINGS_FILE}" > "${tmp}" \
+      && mv "${tmp}" "${SETTINGS_FILE}"
+    echo "[ai-agent-sync] enabledPlugins에 ai-agent-sync@ai-agent-sync 추가 완료."
+  else
+    echo "[ai-agent-sync] jq가 없습니다. 아래 내용을 ${SETTINGS_FILE}에 수동으로 추가하세요."
+    echo '  "enabledPlugins": { "ai-agent-sync@ai-agent-sync": true }'
+  fi
+else
+  echo "[ai-agent-sync] enabledPlugins 이미 설정되어 있습니다."
+fi
+```
+
 ### Step 3 — Apply and push
 
 Before pushing, verify git remote is configured:
@@ -603,6 +632,55 @@ echo "crontab entry removed."
 ```
 
 After removal, `chezmoi update` will no longer run automatically at login.
+
+## 새 에이전트 추가
+
+새로운 AI 에이전트를 공통 스킬/서브에이전트 배포 대상에 포함시킬 때 사용한다.
+
+Trigger: "새 에이전트 추가해줘", "xxx를 sync 대상에 추가해줘", "add new agent to sync"
+
+### Step 1 — sync 스크립트에 에이전트 등록
+
+두 스크립트의 `AGENT_DIRS`에 새 에이전트의 홈 디렉토리 폴더명(`.`으로 시작)을 추가한다.
+
+```sh
+SOURCE_DIR=$(chezmoi source-path)
+
+# run_always_sync-skills.sh 수정
+sed -i 's/^AGENT_DIRS=.*$/AGENT_DIRS=".claude .gemini .codex .<new-agent>"/' \
+  "${SOURCE_DIR}/run_always_sync-skills.sh"
+
+# run_always_sync-agents.sh 수정
+sed -i 's/^AGENT_DIRS=.*$/AGENT_DIRS=".claude .gemini .codex .<new-agent>"/' \
+  "${SOURCE_DIR}/run_always_sync-agents.sh"
+```
+
+`<new-agent>`는 실제 홈 디렉토리 폴더명으로 교체한다. 예: `.cursor`, `.copilot` 등.
+
+### Step 2 — 에이전트 전용 디렉토리 생성 (선택)
+
+에이전트 전용 스킬이나 서브에이전트가 있다면 소스 디렉토리에 추가한다.
+
+```sh
+SOURCE_DIR=$(chezmoi source-path)
+mkdir -p "${SOURCE_DIR}/dot_<new-agent>/skills"
+mkdir -p "${SOURCE_DIR}/dot_<new-agent>/agents"
+```
+
+### Step 3 — apply & push
+
+```sh
+SOURCE_DIR=$(chezmoi source-path)
+
+chezmoi apply
+
+cd "${SOURCE_DIR}"
+git add -A
+git commit -m "feat: add <new-agent> to sync targets"
+git push
+```
+
+`chezmoi apply` 이후 `run_always_sync-skills.sh`와 `run_always_sync-agents.sh`가 즉시 실행되어 공통 스킬·서브에이전트가 새 에이전트 디렉토리에 배포된다.
 
 ## Important Notes
 - Template files (`.tmpl`) are rendered automatically during `chezmoi apply`.
