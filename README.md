@@ -1,61 +1,91 @@
 # AI Agent Sync Plugin
 
-A unified **Plugin** to synchronize your AI agent environments (Claude, Gemini, Codex) across multiple machines using `chezmoi` and `git`.
+A unified plugin to synchronize your AI agent environments (Claude, Gemini, Codex) across multiple machines using `chezmoi` and `git`.
 
 ## What is this?
 
-Managing custom skills, prompts, and configurations across different AI agents and multiple machines can be tedious. This plugin solves this by teaching your AI agent how to automatically manage its own environment using `chezmoi`.
+Managing skills, sub-agents, and plugin configurations consistently across different AI agents and multiple machines is tedious. This plugin teaches each agent how to manage its own environment directly through `chezmoi`.
 
-By installing this plugin, your agent gains the following skills:
-- `sync-dotfiles`: Syncs your dotfiles and agent settings with a remote git repository.
-- `manage-skills`: Adds, removes, promotes, or demotes skills across your agents.
-- `manage-agents`: Adds, removes, or modifies sub-agents.
-- `list-skills`: Lists all currently loaded skills.
+## Provided Skills
+
+| Skill | Description |
+|-------|-------------|
+| `sync-dotfiles` | Sync dotfiles and agent settings with a remote git repository |
+| `manage-skills` | Add, edit, remove, promote, or demote skills (shared ↔ agent-specific) |
+| `list-skills` | List all currently loaded skills per agent |
+| `manage-agents` | Add, edit, remove, promote, or demote sub-agents |
+| `list-agents` | List sub-agent inventory per agent |
+| `manage-plugins` | Add, edit, or remove plugins / MCP servers per agent |
+| `list-plugins` | List plugin inventory per agent |
 
 ## Installation
 
-You can install this plugin into your preferred AI agent by simply cloning this repository into the agent's plugin directory.
-
-### For Claude (ecc)
-```bash
-git clone https://github.com/YOUR_USERNAME/ai-agent-sync.git ~/.claude/plugins/ai-agent-sync
-```
-*(Or use `ecc install` if published to the ecc marketplace)*
-
-### For Gemini (Antigravity)
-```bash
-git clone https://github.com/YOUR_USERNAME/ai-agent-sync.git ~/.gemini/config/plugins/ai-agent-sync
-```
-
-### For Codex
-```bash
-git clone https://github.com/YOUR_USERNAME/ai-agent-sync.git ~/.codex/plugins/ai-agent-sync
-```
+See [INSTALL.md](INSTALL.md) for full installation instructions.
 
 ## How it works
 
-After installing the plugin, the AI agent will manage your personal `Agent Setting Repo` (your dotfiles repository). 
-When you use the skills provided by this plugin, the agent will:
-1. Maintain common skills in a single hub (`~/.ai-skills/`) and common agents in (`~/.ai-agents/`).
-2. Run `chezmoi apply` to automatically distribute these common skills/agents to all of your installed agents.
-3. Push the changes to your remote Git repository.
+All changes happen exclusively in the **chezmoi source directory (managed area)**. Editing agent folders in the home directory directly will be overwritten on the next `chezmoi apply`, so skills, agents, and plugins must always be managed through the source directory.
 
-## Usage
+```
+[Managed Area — chezmoi source]         [Actual Agent Folders — do not edit directly]
 
-Simply ask your AI agent:
-- "초기 설정해줘" / "set up for the first time" (To initialize chezmoi and your dotfiles repo)
-- "Sync your settings" → pulls remote changes and distributes to all agents
-- "Push my changes" → commits and pushes local changes to git
-- "스킬 목록 보여줘" / "List skills" → Lists all available skills across agents
-- "새 스킬 만들어줘" / "Create a new skill" → Helps you create and sync a new skill
+dot_ai-skills/        →  chezmoi apply  →  ~/.ai-skills/
+dot_ai-agents/        →  chezmoi apply  →  ~/.ai-agents/
+dot_claude/skills/    →  chezmoi apply  →  ~/.claude/skills/
+dot_claude/agents/    →  chezmoi apply  →  ~/.claude/agents/
+dot_gemini/skills/    →  chezmoi apply  →  ~/.gemini/skills/
+dot_gemini/agents/    →  chezmoi apply  →  ~/.gemini/agents/
+dot_codex/skills/     →  chezmoi apply  →  ~/.codex/skills/
+dot_codex/agents/     →  chezmoi apply  →  ~/.codex/agents/
+        ↓
+      git push → remote repository → pull on another machine
+```
+
+When you change a skill, agent, or plugin, the agent automatically runs `chezmoi apply` and `git push` to completion.
+
+## Plugin Systems by Agent
+
+Each agent has a different plugin mechanism.
+
+| Agent | System | Config Location |
+|-------|--------|----------------|
+| Claude Code | Marketplace (`enabledPlugins`) | `~/.claude/settings.json` |
+| Codex | Marketplace (`[plugins.*]`) | `~/.codex/config.toml` |
+| Gemini CLI | Skills directory (auto-scan) | `~/.gemini/skills/` |
+
+## Usage Examples
+
+```
+/sync-dotfiles                          → Initialize chezmoi and connect dotfiles repo
+"Sync my settings"                      → Pull remote changes and apply to all agents
+"List skills"                           → Show skill inventory per agent
+"List plugins"                          → Show plugin / MCP server inventory per agent
+"Promote the xxx skill to shared"       → Move to ~/.ai-skills/ and deploy to all agents
+"Add the ecc plugin"                    → Register ecc marketplace plugin for Claude Code
+"Edit the xxx skill"                    → Update skill content in the chezmoi source
+"Add cursor to sync targets"            → Extend sync scripts to include a new agent
+```
 
 ## Directory Structure
 
-- `plugin.json` — Plugin metadata for Vibe Index and agent marketplaces
-- `skills/` — The collection of skills provided by this plugin (sync-dotfiles, manage-skills, etc.)
-- `scripts/` — Helper scripts that the agent injects into your dotfiles to auto-run on `chezmoi apply`
-- `templates/` — Reference templates and ignore lists
-- `LICENSE` — MIT License
+```
+ai-agent-sync/
+├── plugin.json          — Plugin metadata
+├── INSTALL.md           — Detailed installation guide (English)
+├── INSTALL.ko.md        — Detailed installation guide (Korean)
+├── PLUGIN-REGISTRY.md   — Registered plugin registry
+├── scripts/
+│   ├── run_always_sync-skills.sh    — Auto-distributes common skills on chezmoi apply
+│   └── run_always_sync-agents.sh   — Auto-distributes common sub-agents on chezmoi apply
+└── skills/
+    ├── sync-dotfiles/   — Dotfiles sync, initial setup, scheduler management
+    ├── manage-skills/   — Skill management (add, edit, remove, promote, demote)
+    ├── list-skills/     — Skill listing
+    ├── manage-agents/   — Sub-agent management (add, edit, remove, promote, demote)
+    ├── list-agents/     — Sub-agent listing
+    ├── manage-plugins/  — Plugin / MCP server management (add, edit, remove)
+    └── list-plugins/    — Plugin listing
+```
 
 ## License
 
